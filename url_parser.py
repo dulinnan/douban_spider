@@ -4,14 +4,16 @@ from bs4 import BeautifulSoup
 import openload
 import re
 
-base_url = 'http://turbogvideos.com/'
+base_url = 'http://icbc.com.cn'
 headers = {
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
+    'User-Agent': '''
+            Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36
+        '''}
 
 path = './Watchlist.txt'
 regex = re.compile(
     r'^(?:http)s?://'
-    r'(www.)?turbogvideos.com/category/'
+    r'(www.)?icbc.com.cn/'
     r'([a-zA-Z]+-*)+', re.IGNORECASE)
 function_index = 0
 
@@ -33,28 +35,17 @@ def process_url(params):
 def extract_url(url):
     url_list = []
     data = requests.get(url, headers=headers).text
+    print("request get data: " + data)
     soup = BeautifulSoup(data, 'html.parser')
+    print("BeautifulSoup: " + soup)
     time.sleep(1)
-    for link in soup.find_all("h2", {"class": "entry-title"}):
+    print("findAll: " + str(soup.find_all("span", {"class": "ChannelSummaryList-insty"})))
+    for link in soup.find_all("span", {"class": "ChannelSummaryList-insty"}):
         refresh_content = link.contents
         opt_data = refresh_content[0].get('href')
-        url_list.append(opt_data)
-    extract_outlink_url(url_list)
-
-
-# def extract_query_url(query):
-#     url_list = []
-#     query = query.replace(" ", "+")
-#     original_url = base_url + '?s=' + query
-#     print("extracting: " + original_url)
-#     data = requests.get(original_url, headers=headers).text
-#     soup = BeautifulSoup(data, 'html.parser')
-#     time.sleep(1)
-#     for link in soup.find_all("h2", {"class": "entry-title"}):
-#         refresh_content = link.contents
-#         opt_data = refresh_content[0].get('href')
-#         url_list.append(opt_data)
-#     return url_list
+        url_list.append(base_url + opt_data)
+    print(url_list, file=open(path, 'a'))
+    # extract_outlink_url(url_list)
 
 
 def extract_outlink_url(source_url):
