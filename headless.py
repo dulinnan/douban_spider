@@ -24,13 +24,16 @@ def init_driver():
     return driver
 
 
-def extract_url(url):
+def extract_url(url, count):
+    i = 0
     driver = init_driver()
     driver.get(url)
     parent_elements = driver.find_elements_by_class_name("ChannelSummaryList-insty")
-    for element in parent_elements:
+    while i < count:
+        element = parent_elements[i]
         link = element.find_element_by_tag_name("a").get_attribute("href")
         print(link, file=open(opt_path, "a"))
+        i += 1
     driver.close()
 
 
@@ -55,13 +58,12 @@ def extract_content(url):
     source_month = source[-6: -4]
     source_date = source[-3: -1]
 
-    publish_props = source_year + source_month + source_date + str(random.randint(0, int(source_year + source_month + source_date)))
-    print("publish props: " + publish_props)
+    publish_props = source_year + source_month + source_date + str(
+        random.randint(0, int(source_year + source_month + source_date)))
+
     publish_date = process_date(source_month, source_date)
-    print("publish date: " + publish_date)
 
     title = driver.find_element_by_xpath("//span[@id='NCPHRICH_TitleHtmlPlaceholderDefinition']").text
-    print("title: " + str(title))
 
     parent_element = driver.find_element_by_id("MyFreeTemplateUserControl")
     article_paragraphs = parent_element.find_elements_by_tag_name("p")
@@ -69,10 +71,18 @@ def extract_content(url):
     for paragraph in article_paragraphs:
         content += paragraph.text + " \n "
     data["props"] = publish_props
-    data["title"] = title
+
     data["author"] = ""
     data["date"] = publish_date
-    data["content"] = content
+    title_replaced = str(title).replace("“", "「")
+    title_replaced = title_replaced.replace("”", "」")
+    content_replaced = content.replace("“", "「")
+    content_replaced= content_replaced.replace("”", "」")
+    print("publish props: " + publish_props)
+    print("publish date: " + publish_date)
+    print("title: " + title_replaced)
+    data["title"] = title_replaced
+    data["content"] = content_replaced
 
     driver.close()
 
@@ -82,8 +92,8 @@ def extract_content(url):
 def retrieve_content(path):
     i = 0
     json_dump = []
-    with open(path) as f:
-        for line in f:
+    with open(path) as link_file:
+        for line in link_file:
             json_object = extract_content(line)
             json_dump.append(json_object)
             i += 1
@@ -99,13 +109,20 @@ def main():
           This Python script will extract articles from ICBC website and save it into json file.
 
     """
+    global news_count
+    try:
+        news_count = int(input("How many lines of news to process? "))
+    except ValueError:
+        exit("Not an integer value...")
+    except EOFError:
+        exit("Please input something....")
 
     print("--- initialing headless chrome starting ---")
     init_driver()
     print("--- initialing headless chrome finished ---")
 
     print("--- extracting article urls from ICBC ---")
-    extract_url(base_url)
+    extract_url(base_url, news_count)
     print("--- Article urls saved as article_link.txt ---")
 
     print("--- extracting article from a given file ---")

@@ -130,3 +130,8 @@ dmypy.json
 
 # Jetbrains
 .idea/
+
+# images
+images/
+images/*
+images/*/*
